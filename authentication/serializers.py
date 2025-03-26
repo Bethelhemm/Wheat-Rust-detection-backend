@@ -1,9 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from .models import User
-from django.core.mail import send_mail
+from django.core.mail import send_mail, BadHeaderError
 from django.utils.timezone import now
-
+from django.core.exceptions import ImproperlyConfigured
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -54,9 +54,22 @@ class ForgotPasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError("User not found.")
         
         otp = user.generate_otp()
-        # Send OTP via email or SMS
+
         if user.email:
-            send_mail("Password Reset OTP", f"Your OTP is {otp}", "noreply@example.com", [user.email])
+            try:
+                send_mail(
+                    subject="Password Reset OTP",
+                    message=f"Your OTP is {otp}",
+                    from_email="noreply@example.com",
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
+            except BadHeaderError:
+                raise serializers.ValidationError("Invalid email header found.")
+            except ImproperlyConfigured as e:
+                raise serializers.ValidationError(f"Email configuration error: {str(e)}")
+            except Exception as e:
+                raise serializers.ValidationError(f"Error sending email: {str(e)}")
         
         return {"message": "OTP sent successfully."}
 
