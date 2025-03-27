@@ -30,27 +30,3 @@ class LoginView(GenericAPIView):
                 "refresh_token": str(tokens)
             })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class ForgotPasswordView(GenericAPIView):
-    serializer_class = ForgotPasswordSerializer
-
-    def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
-
-class VerifyOTPView(GenericAPIView):
-    serializer_class = VerifyOTPSerializer
-
-    def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
-
-class ResetPasswordView(GenericAPIView):
-    serializer_class = ResetPasswordSerializer
-
-    def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
