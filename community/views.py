@@ -1,10 +1,9 @@
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from .models import Post, Comment, Like, SavedPost
-from .serializers import PostSerializer, CommentSerializer, LikeSerializer, SavedPostSerializer
-
-
+from .models import *
+from .serializers import *
+from django.db.models import Q
 class PostCreateView(generics.CreateAPIView):
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticated]
@@ -12,11 +11,9 @@ class PostCreateView(generics.CreateAPIView):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-
 class PostListView(generics.ListAPIView):
     queryset = Post.objects.all().order_by("-created_at")
     serializer_class = PostSerializer
-
 
 class CommentCreateView(generics.CreateAPIView):
     serializer_class = CommentSerializer
@@ -24,7 +21,6 @@ class CommentCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
 
 class LikePostView(generics.CreateAPIView):
     serializer_class = LikeSerializer
@@ -41,7 +37,6 @@ class LikePostView(generics.CreateAPIView):
 
         return Response({"message": "Post liked"}, status=status.HTTP_201_CREATED)
 
-
 class SavePostView(generics.CreateAPIView):
     serializer_class = SavedPostSerializer
     permission_classes = [IsAuthenticated]
@@ -56,3 +51,11 @@ class SavePostView(generics.CreateAPIView):
             return Response({"message": "Post removed from saved"}, status=status.HTTP_204_NO_CONTENT)
 
         return Response({"message": "Post saved"}, status=status.HTTP_201_CREATED)
+    
+class PostSearchView(generics.ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        query = self.request.query_params.get('q', '')
+        return Post.objects.filter(Q(text__icontains=query)).order_by('-created_at')      
