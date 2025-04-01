@@ -1,6 +1,9 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
-
+from django.utils import timezone
+from datetime import timedelta
+import random
+import string
 class UserManager(BaseUserManager):
     def create_user(self, name, email=None, phone=None, password=None, role="farmer"):
         if not email and not phone:
@@ -32,6 +35,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="farmer")
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    otp = models.CharField(max_length=6, null=True, blank=True)
+    otp_expiry = models.DateTimeField(null=True, blank=True)
+
+    def generate_otp(self):
+        self.otp = ''.join(random.choices(string.digits, k=6))
+        self.otp_expiry = timezone.now() + timedelta(minutes=5)  # OTP valid for 5 minutes
+        self.save()
 
     objects = UserManager()
 

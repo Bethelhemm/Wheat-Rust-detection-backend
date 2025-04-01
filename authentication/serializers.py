@@ -32,14 +32,40 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        user = None
-        if data.get("email"):
-            user = authenticate(email=data["email"], password=data["password"])
-        elif data.get("phone"):
-            user = authenticate(phone=data["phone"], password=data["password"])
-        
+        email = data.get("email")
+        phone = data.get("phone")
+        password = data.get("password")
+
+        if not email and not phone:
+            raise serializers.ValidationError("Email or phone is required.")
+
+        username = email if email else phone
+        user = authenticate(username=username, password=password)
+
         if user is None:
             raise serializers.ValidationError("Invalid credentials.")
-        
+
         return {"user": user}
 
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=False)
+    phone = serializers.CharField(required=False)
+
+    def validate(self, data):
+        email = data.get("email")
+        phone = data.get("phone")
+
+        if not email and not phone:
+            raise serializers.ValidationError("Email or phone is required.")
+        
+        return data
+
+class PasswordResetVerifySerializer(serializers.Serializer):
+    otp = serializers.CharField()
+    new_password = serializers.CharField(write_only=True)
+    new_password2 = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        if data["new_password"] != data["new_password2"]:
+            raise serializers.ValidationError("Passwords must match.")
+        return data
