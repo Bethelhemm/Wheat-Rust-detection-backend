@@ -5,12 +5,22 @@ from .models import *
 from .serializers import *
 from django.db.models import Q
 from notifications.models import Notification
+from rest_framework import generics, status, parsers
+
 class PostCreateView(generics.CreateAPIView):
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        # Handle file uploads
+        request.data._mutable = True
+        request.data['user'] = request.user.id
+        request.data._mutable = False
+        return super().post(request, *args, **kwargs)
 
 class PostListView(generics.ListAPIView):
     queryset = Post.objects.all().order_by("-created_at")

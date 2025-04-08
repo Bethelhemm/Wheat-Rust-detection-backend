@@ -6,6 +6,8 @@ class PostSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source="user.name", read_only=True)
     likes_count = serializers.SerializerMethodField()
     comments_count = serializers.SerializerMethodField()
+    image = serializers.ImageField(required=False, allow_null=True)
+    audio = serializers.FileField(required=False, allow_null=True)
 
     class Meta:
         model = Post
