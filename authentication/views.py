@@ -1,14 +1,17 @@
-from rest_framework.generics import GenericAPIView
+from rest_framework.generics import GenericAPIView, CreateAPIView, ListAPIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, filters
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
 from .serializers import *
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from django.db.models import Count
 from django.core.mail import send_mail
 from django.conf import settings
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.pagination import PageNumberPagination
+from django_filters.rest_framework import DjangoFilterBackend
 
 class RegisterView(GenericAPIView):
     serializer_class = RegisterSerializer
@@ -36,12 +39,29 @@ class LoginView(GenericAPIView):
             })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+class UpdateProfileView(GenericAPIView):
+    serializer_class = UserUpdateSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def put(self, request):
+        serializer = self.get_serializer(instance=request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(UserSerializer(request.user).data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 class AdminUserListView(GenericAPIView):
-    """
-    API endpoint to retrieve all users. Only accessible by admins.
-    """
+    
     serializer_class = UserSerializer
     permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]
+    queryset = User.objects.all()
+    pagination_class = PageNumberPagination
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ['name', 'email', 'phone']
+    filterset_fields = ['role']
+
 
     def get(self, request, *args, **kwargs):
         users = User.objects.all()
@@ -69,6 +89,64 @@ class UserStatsView(APIView):
             },
             status=status.HTTP_200_OK
         )
+    
+class SubmitVerificationRequestView(CreateAPIView):
+    queryset = VerificationRequest.objects.all()
+    serializer_class = VerificationRequestSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+class VerificationRequestListView(ListAPIView):
+    queryset = VerificationRequest.objects.select_related('user').all()
+    serializer_class = VerificationRequestSerializer
+    permission_classes = [IsAdminUser]
+
+class ApproveVerificationView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, pk):
+        try:
+            req = VerificationRequest.objects.get(pk=pk)
+        except VerificationRequest.DoesNotExist:
+            return Response({'detail': 'Verification request not found.'}, status=404)
+
+        req.is_approved = True
+        req.reviewed_by = request.user
+        req.reviewed_at = now()
+        req.save()
+
+        # Assign tag to the user
+        if req.role == 'researcher':
+            req.user.is_verified_researcher = True
+        elif req.role == 'expert':
+            req.user.is_verified_expert = True
+        req.user.save()
+
+        return Response({'detail': 'User verified successfully.'})
+
+class RejectVerificationView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, pk):
+        try:
+            req = VerificationRequest.objects.get(pk=pk)
+        except VerificationRequest.DoesNotExist:
+            return Response({"detail": "Verification request not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if req.is_approved:
+            return Response({"detail": "This request is already approved and cannot be rejected."}, status=status.HTTP_400_BAD_REQUEST)
+
+        rejection_reason = request.data.get("reason", "")
+
+        req.is_rejected = True
+        req.rejection_reason = rejection_reason
+        req.reviewed_by = request.user
+        req.reviewed_at = now()
+        req.save()
+
+        return Response({"detail": "Verification request rejected."}, status=status.HTTP_200_OK)
     
 class PasswordResetRequestView(GenericAPIView):
     serializer_class = PasswordResetRequestSerializer
