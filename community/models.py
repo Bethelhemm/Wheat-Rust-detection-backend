@@ -2,7 +2,13 @@ from django.db import models
 from authentication.models import User
 
 class Post(models.Model):
+    POST_TYPE_CHOICES = [
+        ("question", "Question"),
+        ("article", "Article"),
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
+    post_type = models.CharField(max_length=20, choices=POST_TYPE_CHOICES, default="question")
     text = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to="post_images/", blank=True, null=True)
     audio = models.FileField(upload_to="post_audios/", blank=True, null=True)

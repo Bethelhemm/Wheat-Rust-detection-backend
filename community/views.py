@@ -2,6 +2,7 @@ from rest_framework import generics, status, parsers
 from rest_framework.permissions import IsAuthenticated, BasePermission
 from rest_framework.response import Response
 from django.db.models import Q
+from rest_framework.exceptions import PermissionDenied
 from .models import Post, Comment, Like, SavedPost
 from .serializers import PostSerializer, CommentSerializer, LikeSerializer, SavedPostSerializer
 from notifications.models import Notification
@@ -13,13 +14,24 @@ class IsOwnerOrReadOnly(BasePermission):
     def has_object_permission(self, request, view, obj):
         return obj.user == request.user
 
+class IsVerifiedExpertOrResearcher(BasePermission):
+    """
+    Custom permission to allow only verified agricultural experts or researchers to create posts.
+    """
+    def has_permission(self, request, view):
+        user = request.user
+        return user.is_authenticated and (user.is_verified_researcher or user.is_verified_expert)
+
 class PostCreateView(generics.CreateAPIView):
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerifiedExpertOrResearcher]
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        user = self.request.user
+        if not (user.is_verified_researcher or user.is_verified_expert):
+            raise PermissionDenied("Only verified agricultural experts or researchers can post articles.")
+        serializer.save(user=user)
 
 class PostListView(generics.ListAPIView):
     queryset = Post.objects.all().order_by("-created_at")
