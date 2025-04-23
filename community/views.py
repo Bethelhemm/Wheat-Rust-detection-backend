@@ -24,13 +24,15 @@ class IsVerifiedExpertOrResearcher(BasePermission):
 
 class PostCreateView(generics.CreateAPIView):
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticated, IsVerifiedExpertOrResearcher]
+    permission_classes = [IsAuthenticated]
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
 
     def perform_create(self, serializer):
         user = self.request.user
-        if not (user.is_verified_researcher or user.is_verified_expert):
-            raise PermissionDenied("Only verified agricultural experts or researchers can post articles.")
+        post_type = serializer.validated_data.get("post_type", "question")
+        if post_type == "article":
+            if not (user.is_verified_researcher or user.is_verified_expert):
+                raise PermissionDenied("Only verified agricultural experts or researchers can post articles.")
         serializer.save(user=user)
 
 class PostListView(generics.ListAPIView):
