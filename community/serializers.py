@@ -8,10 +8,11 @@ class PostSerializer(serializers.ModelSerializer):
     comments_count = serializers.SerializerMethodField()
     image = serializers.ImageField(required=False, allow_null=True)
     audio = serializers.FileField(required=False, allow_null=True)
+    post_type = serializers.ChoiceField(choices=Post.POST_TYPE_CHOICES, default="question")
 
     class Meta:
         model = Post
-        fields = ["id", "user", "user_name", "text", "image", "audio", "created_at", "likes_count", "comments_count"]
+        fields = ["id", "user", "user_name", "text", "image", "audio", "created_at", "likes_count", "comments_count", "post_type"]
 
     def get_likes_count(self, obj):
         return obj.likes.count()
