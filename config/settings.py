@@ -16,6 +16,7 @@ from decouple import config
 import os
 from dotenv import load_dotenv
 import dj_database_url
+from datetime import timedelta
 
 # Load environment variables from .env file
 load_dotenv()
@@ -169,3 +170,11 @@ EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER  # Use this in send_mail()
+
+# Simple JWT settings to increase token lifetime
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),  # Access token valid for 1 day
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),  # Refresh token valid for 7 days
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+}
