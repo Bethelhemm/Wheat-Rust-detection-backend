@@ -18,7 +18,7 @@ djangorestframework_simplejwt==5.5.0
 drf-yasg==1.21.10
 exceptiongroup==1.2.2
 frozenlist==1.6.0
-gotrue==2.9.1
+gotrue==2.10.0
 gunicorn==23.0.0
 h11==0.16.0
 h2==4.2.0
