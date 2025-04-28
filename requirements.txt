@@ -22,4 +22,5 @@ sqlparse==0.5.3
 typing_extensions==4.12.2
 uritemplate==4.1.1
 whitenoise==6.9.0
-supabase-py==1.0.0
+supabase==2.3.5
+
