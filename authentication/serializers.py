@@ -8,14 +8,14 @@ from django.core.exceptions import ImproperlyConfigured
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "name", "email", "phone", "role", "profile_image", "is_active"]
+        fields = ["id", "username", "name", "email", "phone", "role", "profile_image", "is_active"]
 
 class RegisterSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
-        fields = ["name", "email", "phone", "role", "password", "password2", "profile_image"]
+        fields = ["username", "name", "email", "phone", "role", "password", "password2", "profile_image"]
     
     def validate(self, data):
         if data["password"] != data["password2"]:
@@ -50,9 +50,10 @@ class LoginSerializer(serializers.Serializer):
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["name", "profile_image"]
+        fields = ["username", "name", "profile_image"]
 
     def update(self, instance, validated_data):
+        instance.username = validated_data.get("username", instance.username)
         instance.name = validated_data.get("name", instance.name)
         instance.profile_image = validated_data.get("profile_image", instance.profile_image)
         instance.save()

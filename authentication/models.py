@@ -4,17 +4,20 @@ from django.utils import timezone
 from datetime import timedelta
 import random
 import string
+from .storage_backends import SupabaseStorage
 class UserManager(BaseUserManager):
-    def create_user(self, name, email=None, phone=None, password=None, role="farmer"):
+    def create_user(self, username, name, email=None, phone=None, password=None, role="farmer"):
         if not email and not phone:
             raise ValueError("Users must have either an email or phone number.")
-        user = self.model(name=name, email=email, phone=phone, role=role)
+        if not username:
+            raise ValueError("Users must have a username.")
+        user = self.model(username=username, name=name, email=email, phone=phone, role=role)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, name, email, password, phone=None, role="admin"):
-        user = self.create_user(name=name, email=email, phone=phone, password=password, role=role)
+    def create_superuser(self, username, name, email, password, phone=None, role="admin"):
+        user = self.create_user(username=username, name=name, email=email, phone=phone, password=password, role=role)
         user.is_staff = True
         user.is_superuser = True
         user.save(using=self._db)
@@ -29,11 +32,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         ("expert", "Agricultural Expert"),
     ]
 
+    username = models.CharField(max_length=150, unique=True, null=True, blank=True)
     name = models.CharField(max_length=255)
     email = models.EmailField(unique=True, null=True, blank=True)
     phone = models.CharField(max_length=15, unique=True, null=True, blank=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="farmer")
-    profile_image = models.ImageField(upload_to="profile_images/", blank=True, null=True)
+    profile_image = models.ImageField(upload_to="profile_images/", blank=True, null=True, storage=SupabaseStorage)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_verified_researcher = models.BooleanField(default=False)
@@ -49,7 +53,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = "email"  # Set email as the unique identifier
-    REQUIRED_FIELDS = ["name", "phone"]
+    REQUIRED_FIELDS = ["username", "name", "phone"]
 
     def __str__(self):
         return self.name
@@ -62,7 +66,7 @@ class VerificationRequest(models.Model):
     
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
-    certificate = models.FileField(upload_to='certificates/')
+    certificate = models.FileField(upload_to='certificates/', storage=SupabaseStorage)
     is_approved = models.BooleanField(default=False)
     reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_requests')
     reviewed_at = models.DateTimeField(null=True, blank=True)
