@@ -20,7 +20,7 @@ from rest_framework.decorators import api_view, permission_classes, parser_class
 from rest_framework.parsers import MultiPartParser
 from rest_framework import status
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from .storage_backends import SupabaseStorage
+# SupabaseStorage import removed as Supabase storage is no longer used
 import os
 
 class RegisterView(GenericAPIView):
@@ -69,6 +69,14 @@ class UserProfileView(GenericAPIView):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser
+from rest_framework.response import Response
+from rest_framework import status
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+
 class FileUploadView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser]
@@ -78,16 +86,12 @@ class FileUploadView(APIView):
         if not file_obj:
             return Response({"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Use SupabaseStorage to upload file
-        storage = SupabaseStorage()
-        file_name = file_obj.name
-
         try:
-            storage._save(file_name, file_obj)
+            path = default_storage.save(file_obj.name, ContentFile(file_obj.read()))
+            file_url = default_storage.url(path)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        file_url = storage.url(file_name)
         return Response({"file_url": file_url}, status=status.HTTP_201_CREATED)
     
 class AdminUserListView(GenericAPIView):
