@@ -4,7 +4,13 @@ from django.utils import timezone
 from datetime import timedelta
 import random
 import string
-from .storage_backends import SupabaseStorage
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.db import models
+from django.utils import timezone
+from datetime import timedelta
+import random
+import string
+
 class UserManager(BaseUserManager):
     def create_user(self, username, name, email=None, phone=None, password=None, role="farmer"):
         if not email and not phone:
@@ -37,7 +43,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True, null=True, blank=True)
     phone = models.CharField(max_length=15, unique=True, null=True, blank=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="farmer")
-    profile_image = models.ImageField(upload_to="profile_images/", blank=True, null=True, storage=SupabaseStorage)
+    profile_image = models.ImageField(upload_to="profile_images/", blank=True, null=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_verified_researcher = models.BooleanField(default=False)
@@ -66,7 +72,7 @@ class VerificationRequest(models.Model):
     
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
-    certificate = models.FileField(upload_to='certificates/', storage=SupabaseStorage)
+    certificate = models.FileField(upload_to='certificates/')
     is_approved = models.BooleanField(default=False)
     reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_requests')
     reviewed_at = models.DateTimeField(null=True, blank=True)

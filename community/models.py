@@ -1,7 +1,5 @@
 from django.db import models
 from authentication.models import User
-from authentication.storage_backends import SupabaseStorage
-
 class Post(models.Model):
     POST_TYPE_CHOICES = [
         ("question", "Question"),
@@ -11,8 +9,8 @@ class Post(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
     post_type = models.CharField(max_length=20, choices=POST_TYPE_CHOICES, default="question")
     text = models.TextField(blank=True, null=True)
-    image = models.ImageField(upload_to="post_images/", blank=True, null=True, storage=SupabaseStorage)
-    audio = models.FileField(upload_to="post_audios/", blank=True, null=True, storage=SupabaseStorage)
+    image = models.ImageField(upload_to="post_images/", blank=True, null=True)
+    audio = models.FileField(upload_to="post_audios/", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
