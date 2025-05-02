@@ -21,4 +21,7 @@ urlpatterns = [
     path("verify/reject/<int:pk>/", RejectVerificationView.as_view(), name="reject-verification"),
     path("password-reset/", PasswordResetRequestView.as_view(), name="password-reset"),
     path("password-reset/verify/", PasswordResetVerifyView.as_view(), name="password-reset-verify"),
+    path("verification/status/", UserVerificationStatusView.as_view(), name="user-verification-status"),
+    path("upload-file/", FileUploadView.as_view(), name="file-upload"),
+
 ]
