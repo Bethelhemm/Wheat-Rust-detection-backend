@@ -93,6 +93,33 @@ class FileUploadView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response({"file_url": file_url}, status=status.HTTP_201_CREATED)
+
+class UserVerificationStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        latest_request = VerificationRequest.objects.filter(user=user).order_by('-created_at').first()
+
+        if latest_request:
+            if latest_request.is_approved:
+                status_str = "approved"
+            elif latest_request.is_rejected:
+                status_str = "rejected"
+            else:
+                status_str = "pending"
+            rejection_reason = latest_request.rejection_reason if latest_request.is_rejected else None
+        else:
+            status_str = "no_request"
+            rejection_reason = None
+
+        data = {
+            "is_verified_researcher": user.is_verified_researcher,
+            "is_verified_expert": user.is_verified_expert,
+            "verification_request_status": status_str,
+            "rejection_reason": rejection_reason,
+        }
+        return Response(data, status=status.HTTP_200_OK)
     
 class AdminUserListView(GenericAPIView):
     
@@ -139,10 +166,14 @@ class SubmitVerificationRequestView(CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
+        # Prevent submission if user has a pending (not approved or rejected) request
+        existing_request = VerificationRequest.objects.filter(user=self.request.user, is_approved=False, is_rejected=False).first()
+        if existing_request:
+            raise serializers.ValidationError("You already have a pending verification request.")
         serializer.save(user=self.request.user)
 
 class VerificationRequestListView(ListAPIView):
-    queryset = VerificationRequest.objects.select_related('user').all()
+    queryset = VerificationRequest.objects.select_related('user').filter(is_rejected=False)
     serializer_class = VerificationRequestSerializer
     permission_classes = [IsAdminUser]
 
