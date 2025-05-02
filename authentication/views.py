@@ -1,27 +1,22 @@
-from rest_framework.generics import GenericAPIView, CreateAPIView, ListAPIView
-from rest_framework.response import Response
-from rest_framework import status, filters
-from rest_framework_simplejwt.tokens import RefreshToken
-from .models import User
-from .serializers import *
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
-from django.db.models import Count
-from django.core.mail import send_mail
 from django.conf import settings
-from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.pagination import PageNumberPagination
+from django.core.mail import send_mail
+from django.db.models import Count
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
-from rest_framework.parsers import FileUploadParser
-from rest_framework.decorators import api_view, permission_classes, parser_classes
+from rest_framework import filters
+from rest_framework.generics import GenericAPIView, CreateAPIView, ListAPIView
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.parsers import FormParser
 from rest_framework.parsers import MultiPartParser
-from rest_framework import status
-from django.core.files.uploadedfile import InMemoryUploadedFile
+from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
+from twilio.rest import Client
+
+from .serializers import *
+from .utils import send_afro_otp
+
+
 # SupabaseStorage import removed as Supabase storage is no longer used
-import os
 
 class RegisterView(GenericAPIView):
     serializer_class = RegisterSerializer
@@ -191,25 +186,88 @@ class RejectVerificationView(APIView):
 
         return Response({"detail": "Verification request rejected."}, status=status.HTTP_200_OK)
     
+# class PasswordResetRequestView(GenericAPIView):
+#     serializer_class = PasswordResetRequestSerializer
+#
+#     def post(self, request):
+#         serializer = self.get_serializer(data=request.data)
+#         if serializer.is_valid():
+#             email = serializer.validated_data.get('email')
+#             phone = serializer.validated_data.get('phone')
+#             user = None
+#
+#             if email:
+#                 user = User.objects.filter(email=email).first()
+#             elif phone:
+#                 user = User.objects.filter(phone=phone).first()
+#
+#             if user:
+#                 user.generate_otp()
+#
+#                 # Sending OTP via email
+#                 send_mail(
+#                     'Your OTP Code',
+#                     f'Your OTP code is {user.otp}',
+#                     settings.DEFAULT_FROM_EMAIL,
+#                     [user.email],
+#                     fail_silently=False,
+#                 )
+#
+#                 # # Sending OTP via SMS (using a service like Twilio)
+#                 # client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+#                 # client.messages.create(
+#                 #     body=f'Your OTP code is {user.otp}',
+#                 #     from_=settings.TWILIO_PHONE_NUMBER,
+#                 #     to=user.phone
+#                 # )
+#                 #
+#                 # return Response({"message": "OTP sent!"}, status=status.HTTP_200_OK)
+#
+#             return Response({"message": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+#
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#
+# class PasswordResetVerifyView(GenericAPIView):
+#     serializer_class = PasswordResetVerifySerializer
+#
+#     def post(self, request):
+#         serializer = self.get_serializer(data=request.data)
+#         if serializer.is_valid():
+#             otp = serializer.validated_data["otp"]
+#             new_password = serializer.validated_data["new_password"]
+#             user = User.objects.filter(otp=otp, otp_expiry__gt=timezone.now()).first()
+#
+#             if user:
+#                 user.set_password(new_password)
+#                 user.otp = None  # Clear OTP
+#                 user.otp_expiry = None  # Clear expiry
+#                 user.save()
+#                 return Response({"message": "Password reset successful!"}, status=status.HTTP_200_OK)
+#
+#             return Response({"message": "Invalid OTP or OTP expired."}, status=status.HTTP_400_BAD_REQUEST)
+#
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class PasswordResetRequestView(GenericAPIView):
     serializer_class = PasswordResetRequestSerializer
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            email = serializer.validated_data.get('email')
-            phone = serializer.validated_data.get('phone')
-            user = None
-            
-            if email:
-                user = User.objects.filter(email=email).first()
-            elif phone:
-                user = User.objects.filter(phone=phone).first()
+            email=serializer.validated_data.get('email')
+            phone=serializer.validated_data.get('phone')
+            user=None
 
-            if user:
-                user.generate_otp()
-                
-                # Sending OTP via email
+            if email:
+                user=User.objects.filter(email=email).first()
+            elif phone:
+                user=User.objects.filter(phone=phone).first()
+
+            if not user:
+                return Response({"detail": "No user found."}, status=status.HTTP_404_NOT_FOUND)
+            user.generate_otp()
+            if email:
                 send_mail(
                     'Your OTP Code',
                     f'Your OTP code is {user.otp}',
@@ -217,20 +275,15 @@ class PasswordResetRequestView(GenericAPIView):
                     [user.email],
                     fail_silently=False,
                 )
-
-                # Sending OTP via SMS (using a service like Twilio)
-                client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-                client.messages.create(
-                    body=f'Your OTP code is {user.otp}',
-                    from_=settings.TWILIO_PHONE_NUMBER,
-                    to=user.phone
-                )
-                
-                return Response({"message": "OTP sent!"}, status=status.HTTP_200_OK)
-
-            return Response({"message": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-
+            elif phone:
+                response=send_afro_otp(user)
+                if not response.get("success"):
+                    return Response({"message": "Failed to send OTP via SMS", "error": response.get("error")},
+                                    status=500)
+            return Response({"detail": "OTP code sent successfully."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class PasswordResetVerifyView(GenericAPIView):
     serializer_class = PasswordResetVerifySerializer
@@ -240,15 +293,16 @@ class PasswordResetVerifyView(GenericAPIView):
         if serializer.is_valid():
             otp = serializer.validated_data["otp"]
             new_password = serializer.validated_data["new_password"]
+
             user = User.objects.filter(otp=otp, otp_expiry__gt=timezone.now()).first()
+            if not user:
+                return Response({"message": "Invalid OTP or OTP expired."}, status=status.HTTP_400_BAD_REQUEST)
 
-            if user:
-                user.set_password(new_password)
-                user.otp = None  # Clear OTP
-                user.otp_expiry = None  # Clear expiry
-                user.save()
-                return Response({"message": "Password reset successful!"}, status=status.HTTP_200_OK)
+            user.set_password(new_password)
+            user.otp = None
+            user.otp_expiry = None
+            user.save()
 
-            return Response({"message": "Invalid OTP or OTP expired."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Password reset successful!"}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
