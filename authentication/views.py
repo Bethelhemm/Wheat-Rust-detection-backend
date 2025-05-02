@@ -2,6 +2,12 @@ from rest_framework.generics import GenericAPIView, CreateAPIView, ListAPIView
 from rest_framework.response import Response
 from rest_framework import status, filters
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
 from .models import User
 from .serializers import *
 from rest_framework.views import APIView
@@ -181,6 +187,7 @@ class ApproveVerificationView(APIView):
     permission_classes = [IsAdminUser]
 
     def post(self, request, pk):
+        from notifications.models import Notification
         try:
             req = VerificationRequest.objects.get(pk=pk)
         except VerificationRequest.DoesNotExist:
@@ -198,12 +205,20 @@ class ApproveVerificationView(APIView):
             req.user.is_verified_expert = True
         req.user.save()
 
+        # Create notification for user
+        Notification.objects.create(
+            sender=request.user,
+            receiver=req.user,
+            notification_type="verification",
+        )
+
         return Response({'detail': 'User verified successfully.'})
 
 class RejectVerificationView(APIView):
     permission_classes = [IsAdminUser]
 
     def post(self, request, pk):
+        from notifications.models import Notification
         try:
             req = VerificationRequest.objects.get(pk=pk)
         except VerificationRequest.DoesNotExist:
@@ -219,6 +234,13 @@ class RejectVerificationView(APIView):
         req.reviewed_by = request.user
         req.reviewed_at = now()
         req.save()
+
+        # Create notification for user
+        Notification.objects.create(
+            sender=request.user,
+            receiver=req.user,
+            notification_type="verification",
+        )
 
         return Response({"detail": "Verification request rejected."}, status=status.HTTP_200_OK)
     
@@ -262,6 +284,20 @@ class PasswordResetRequestView(GenericAPIView):
             return Response({"message": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            refresh_token = request.data["refresh_token"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"detail": "Logout successful."}, status=status.HTTP_205_RESET_CONTENT)
+        except KeyError:
+            return Response({"error": "Refresh token is required."}, status=status.HTTP_400_BAD_REQUEST)
+        except (TokenError, InvalidToken) as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class PasswordResetVerifyView(GenericAPIView):
     serializer_class = PasswordResetVerifySerializer

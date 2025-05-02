@@ -51,6 +51,18 @@ class User(AbstractBaseUser, PermissionsMixin):
     otp = models.CharField(max_length=6, null=True, blank=True)
     otp_expiry = models.DateTimeField(null=True, blank=True)
 
+    def get_username(self):
+        # Return email if present, else phone
+        if self.email:
+            return self.email
+        return self.phone
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if not self.email and not self.phone:
+            raise ValidationError("User must have either an email or phone number.")
+
+
     def generate_otp(self):
         self.otp = ''.join(random.choices(string.digits, k=6))
         self.otp_expiry = timezone.now() + timedelta(minutes=5)  # OTP valid for 5 minutes

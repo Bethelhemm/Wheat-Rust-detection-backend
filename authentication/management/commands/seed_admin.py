@@ -9,6 +9,7 @@ class Command(BaseCommand):
         admin_email = config("ADMIN_EMAIL")
         admin_phone = config("ADMIN_PHONE")
         admin_password = config("ADMIN_PASSWORD")
+        admin_username = config("ADMIN_USERNAME", default="admin")
 
         if not User.objects.filter(email=admin_email).exists():
             User.objects.create_superuser(
