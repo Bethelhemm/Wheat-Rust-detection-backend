@@ -35,8 +35,7 @@ Create a `.env` file in the root directory and define the following:
 ```env
 SECRET_KEY=your-secret-key
 DEBUG=True
-DATABASE_URL=postgres://user:password@db:5432/database_name
-ALLOWED_HOSTS=*
+ALLOWED_HOSTS = ['.onrender.com', 'localhost', '127.0.0.1']
 CORS_ALLOWED_ORIGINS=http://localhost:3000
 ```
 
