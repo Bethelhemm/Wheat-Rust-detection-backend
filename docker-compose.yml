@@ -3,7 +3,7 @@ version: '3.8'
 services:
   web:
     build: .
-    command: gunicorn --bind 0.0.0.0:8000 config.wsgi:application
+    command: gunicorn --workers ${GUNICORN_WORKERS:-2} --timeout ${GUNICORN_TIMEOUT:-30} --bind 0.0.0.0:8000 config.wsgi:application
     ports:
       - "8000:8000"
     environment:
@@ -14,6 +14,8 @@ services:
       - EMAIL_USE_TLS=${EMAIL_USE_TLS}
       - EMAIL_HOST_USER=${EMAIL_HOST_USER}
       - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
+      - GUNICORN_WORKERS=2
+      - GUNICORN_TIMEOUT=30
     depends_on:
       - db
 
