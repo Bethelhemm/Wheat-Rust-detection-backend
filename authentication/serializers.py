@@ -27,20 +27,28 @@ class RegisterSerializer(serializers.ModelSerializer):
         return User.objects.create_user(**validated_data)
 
 class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=False)
-    phone = serializers.CharField(required=False)
+    username = serializers.CharField(required=False, allow_blank=True)
+    email = serializers.EmailField(required=False, allow_blank=True)
+    phone = serializers.CharField(required=False, allow_blank=True)
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        email = data.get("email")
-        phone = data.get("phone")
+        username = data.get("username", "")
+        email = data.get("email", "")
+        phone = data.get("phone", "")
         password = data.get("password")
 
-        if not email and not phone:
-            raise serializers.ValidationError("Email or phone is required.")
+        # Determine username for authentication
+        if username:
+            auth_username = username
+        elif email:
+            auth_username = email
+        elif phone:
+            auth_username = phone
+        else:
+            raise serializers.ValidationError("Username, email, or phone is required.")
 
-        username = email if email else phone
-        user = authenticate(username=username, password=password)
+        user = authenticate(username=auth_username, password=password)
 
         if user is None:
             raise serializers.ValidationError("Invalid credentials.")
