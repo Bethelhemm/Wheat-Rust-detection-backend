@@ -27,5 +27,5 @@ RUN python manage.py collectstatic --noinput
 # Expose the port the app runs on
 EXPOSE 8000
 
-# Start the application using Gunicorn with worker and timeout settings
-CMD ["sh", "-c", "gunicorn --workers $GUNICORN_WORKERS --timeout $GUNICORN_TIMEOUT --bind 0.0.0.0:$PORT config.wsgi:application"]
+# Start the application using Gunicorn with gevent worker and reduced workers to save memory
+CMD ["sh", "-c", "gunicorn --worker-class gevent --workers $GUNICORN_WORKERS --timeout $GUNICORN_TIMEOUT --bind 0.0.0.0:$PORT config.wsgi:application"]
