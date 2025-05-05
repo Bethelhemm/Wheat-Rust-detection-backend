@@ -29,10 +29,14 @@ model = None
 def get_model():
     global model
     if model is None:
-        model = tf.keras.models.load_model(
-            "models/wheat_disease_model_final.keras",
-            custom_objects={"focal_loss_fixed": focal_loss_fixed}
-        )
+        try:
+            model = tf.keras.models.load_model(
+                "models/wheat_disease_model_final.keras",
+                custom_objects={"focal_loss_fixed": focal_loss_fixed}
+            )
+        except Exception as e:
+            print(f"Error loading model: {e}")
+            model = None
     return model
 
 

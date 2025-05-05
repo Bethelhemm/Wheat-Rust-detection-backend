@@ -18,10 +18,12 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from .views import RootView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("", include("authentication.urls")),
+    path("", RootView.as_view(), name="root"),
+    path("authentication/", include("authentication.urls")),
     path("community/", include("community.urls")),
     path("notifications/", include("notifications.urls")),
     path("sinde/",include("ml_app.urls")),
