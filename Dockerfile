@@ -19,7 +19,7 @@ ENV DJANGO_SETTINGS_MODULE=config.settings
 
 # Set default Gunicorn settings with reduced workers to save memory
 ENV GUNICORN_WORKERS=1
-ENV GUNICORN_TIMEOUT=30
+ENV GUNICORN_TIMEOUT=60
 
 # Collect static files
 RUN python manage.py collectstatic --noinput
