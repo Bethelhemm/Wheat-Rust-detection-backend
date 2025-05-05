@@ -1,5 +1,5 @@
 # Use the official Python image from the Docker Hub
-FROM python:3.8
+FROM python:3.10
 
 # Set the working directory in the container
 WORKDIR /app
@@ -17,11 +17,15 @@ COPY . .
 ENV PYTHONUNBUFFERED 1
 ENV DJANGO_SETTINGS_MODULE=config.settings
 
+# Set default Gunicorn settings with reduced workers to save memory
+ENV GUNICORN_WORKERS=1
+ENV GUNICORN_TIMEOUT=30
+
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
 # Expose the port the app runs on
 EXPOSE 8000
 
-# Start the application using Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "config.wsgi:application"]
+# Start the application using Gunicorn with worker and timeout settings
+CMD ["sh", "-c", "gunicorn --workers $GUNICORN_WORKERS --timeout $GUNICORN_TIMEOUT --bind 0.0.0.0:$PORT config.wsgi:application"]
