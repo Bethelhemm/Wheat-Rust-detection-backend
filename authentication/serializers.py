@@ -27,26 +27,22 @@ class RegisterSerializer(serializers.ModelSerializer):
         return User.objects.create_user(**validated_data)
 
 class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField(required=False, allow_blank=True)
     email = serializers.EmailField(required=False, allow_blank=True)
     phone = serializers.CharField(required=False, allow_blank=True)
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        username = data.get("username", "")
         email = data.get("email", "")
         phone = data.get("phone", "")
         password = data.get("password")
 
         # Determine username for authentication
-        if username:
-            auth_username = username
-        elif email:
+        if email:
             auth_username = email
         elif phone:
             auth_username = phone
         else:
-            raise serializers.ValidationError("Username, email, or phone is required.")
+            raise serializers.ValidationError("Email or phone is required.")
 
         user = authenticate(username=auth_username, password=password)
 
