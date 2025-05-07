@@ -27,7 +27,6 @@ urlpatterns = [
     path("authentication/", include("authentication.urls")),
     path("community/", include("community.urls")),
     path("notifications/", include("notifications.urls")),
-    path("sinde/",include("ml_app.urls")),
 ]
 
 if settings.DEBUG:
