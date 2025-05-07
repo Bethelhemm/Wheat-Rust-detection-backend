@@ -4,6 +4,8 @@ from .models import *
 from django.core.mail import send_mail, BadHeaderError
 from django.utils.timezone import now
 from django.core.exceptions import ImproperlyConfigured
+import logging
+logger = logging.getLogger(__name__)
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -36,20 +38,25 @@ class LoginSerializer(serializers.Serializer):
         phone = data.get("phone", "")
         password = data.get("password")
 
-        # Determine username for authentication
+        logger.info(f"Login attempt with email: {email}, phone: {phone}")
+
         if email:
             auth_username = email
         elif phone:
             auth_username = phone
         else:
+            logger.warning("Login failed: Email or phone is required.")
             raise serializers.ValidationError("Email or phone is required.")
 
         user = authenticate(username=auth_username, password=password)
 
         if user is None:
+            logger.warning(f"Login failed for username: {auth_username}")
             raise serializers.ValidationError("Invalid credentials.")
 
+        logger.info(f"Login successful for user id: {user.id}")
         return {"user": user}
+
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
