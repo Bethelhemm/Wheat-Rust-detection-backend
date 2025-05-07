@@ -19,7 +19,8 @@ ENV DJANGO_SETTINGS_MODULE=config.settings
 
 # Set default Gunicorn settings with reduced workers to save memory
 ENV GUNICORN_WORKERS=1
-ENV GUNICORN_TIMEOUT=60
+ENV GUNICORN_TIMEOUT=120
+ENV PORT=8000
 
 # Collect static files
 RUN python manage.py collectstatic --noinput
@@ -27,5 +28,5 @@ RUN python manage.py collectstatic --noinput
 # Expose the port the app runs on
 EXPOSE 8000
 
-# Start the application using Gunicorn with gevent worker and reduced workers to save memory
-CMD ["sh", "-c", "gunicorn --worker-class gevent --workers $GUNICORN_WORKERS --timeout $GUNICORN_TIMEOUT --bind 0.0.0.0:$PORT config.wsgi:application"]
+# Start the application using Gunicorn with default sync worker and increased timeout
+CMD ["sh", "-c", "gunicorn --workers $GUNICORN_WORKERS --timeout $GUNICORN_TIMEOUT --bind 0.0.0.0:$PORT config.wsgi:application"]

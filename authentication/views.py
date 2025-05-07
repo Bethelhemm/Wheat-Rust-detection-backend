@@ -45,15 +45,17 @@ class LoginView(GenericAPIView):
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.validated_data["user"]
-            tokens = RefreshToken.for_user(user)
-            return Response({
-                "user": UserSerializer(user).data,
-                "access_token": str(tokens.access_token),
-                "refresh_token": str(tokens)
-            })
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            if serializer.is_valid(raise_exception=True):
+                user = serializer.validated_data["user"]
+                tokens = RefreshToken.for_user(user)
+                return Response({
+                    "user": UserSerializer(user).data,
+                    "access_token": str(tokens.access_token),
+                    "refresh_token": str(tokens)
+                })
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 class UpdateProfileView(GenericAPIView):
     serializer_class = UserUpdateSerializer
