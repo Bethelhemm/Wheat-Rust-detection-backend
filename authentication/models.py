@@ -12,12 +12,16 @@ import random
 import string
 
 class UserManager(BaseUserManager):
-    def create_user(self, username, name, email=None, phone=None, password=None, role="farmer"):
+    def create_user(self, email=None, phone=None, username=None, password=None, role= "farmer", **extra_fields):
         if not email and not phone:
             raise ValueError("Users must have either an email or phone number.")
-        if not username:
-            raise ValueError("Users must have a username.")
-        user = self.model(username=username, name=name, email=email, phone=phone, role=role)
+        
+        user = self.model(
+            email=self.normalize_email(email) if email else None,
+            phone_number=phone,
+            username=username,
+            **extra_fields
+        )
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -85,7 +89,6 @@ class VerificationRequest(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     certificate = models.FileField(upload_to='certificates/')
-    is_approved = models.BooleanField(default=False)
     reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_requests')
     reviewed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
