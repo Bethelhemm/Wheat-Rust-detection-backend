@@ -18,7 +18,7 @@ class UserManager(BaseUserManager):
         
         user = self.model(
             email=self.normalize_email(email) if email else None,
-            phone_number=phone,
+            phone=phone,
             username=username,
             **extra_fields
         )

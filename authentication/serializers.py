@@ -38,7 +38,7 @@ class LoginSerializer(serializers.Serializer):
         phone = data.get("phone", "")
         password = data.get("password")
 
-        logger.info(f"Login attempt with email: {email}, phone: {phone}")
+        logger.info(f"Login attempt with email: {email}, phone: {phone}, password provided: {'yes' if password else 'no'}")
 
         if email:
             auth_username = email

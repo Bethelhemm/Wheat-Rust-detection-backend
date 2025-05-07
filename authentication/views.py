@@ -44,7 +44,13 @@ class LoginView(GenericAPIView):
     serializer_class = LoginSerializer
 
     def post(self, request):
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Login request data: {request.data}")
+
         serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            logger.warning(f"Login serializer errors: {serializer.errors}")
         try:
             if serializer.is_valid(raise_exception=True):
                 user = serializer.validated_data["user"]
@@ -55,6 +61,7 @@ class LoginView(GenericAPIView):
                     "refresh_token": str(tokens)
                 })
         except Exception as e:
+            logger.error(f"Login exception: {str(e)}")
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 class UpdateProfileView(GenericAPIView):
