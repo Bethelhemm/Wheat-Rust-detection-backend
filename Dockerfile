@@ -1,4 +1,3 @@
-# Use the official Python image from the Docker Hub
 FROM python:3.10
 
 # Set the working directory in the container
@@ -28,5 +27,5 @@ RUN python manage.py collectstatic --noinput
 # Expose the port the app runs on
 EXPOSE 8000
 
-# Start the application using Gunicorn with default sync worker and increased timeout
-CMD ["sh", "-c", "gunicorn --workers $GUNICORN_WORKERS --timeout $GUNICORN_TIMEOUT --bind 0.0.0.0:$PORT config.wsgi:application"]
+# Start the application using Gunicorn with migrations and seeding admin before
+CMD ["sh", "-c", "python manage.py migrate && python manage.py seed_admin && gunicorn --workers $GUNICORN_WORKERS --timeout $GUNICORN_TIMEOUT --bind 0.0.0.0:$PORT config.wsgi:application"]
