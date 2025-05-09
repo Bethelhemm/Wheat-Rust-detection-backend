@@ -1,5 +1,5 @@
 from rest_framework import generics, status, parsers
-from rest_framework.permissions import IsAuthenticated, BasePermission
+from rest_framework.permissions import IsAuthenticated, BasePermission, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from django.db.models import Q
 from rest_framework.exceptions import PermissionDenied
@@ -87,6 +87,15 @@ class CommentCreateView(generics.CreateAPIView):
                 post=comment.post,
                 comment=comment
             )
+
+class CommentListView(generics.ListAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        post_id = self.kwargs.get('post_id')
+        return Comment.objects.filter(post_id=post_id).order_by('-created_at')
+
 
 class SavePostView(generics.CreateAPIView):
     serializer_class = SavedPostSerializer

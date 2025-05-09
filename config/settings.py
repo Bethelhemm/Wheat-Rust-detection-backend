@@ -54,6 +54,8 @@ INSTALLED_APPS = [
     "authentication",
     "community",
     "notifications",
+    "cloudinary",
+    "cloudinary_storage",
 ]
 
 REST_FRAMEWORK = {
@@ -123,6 +125,15 @@ DATABASES = {
     }
 }
 
+# Cloudinary settings for media upload
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default=''),
+    'API_KEY': config('CLOUDINARY_API_KEY', default=''),
+    'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
+}
+
+# Set default file storage to Cloudinary
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
