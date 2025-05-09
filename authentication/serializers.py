@@ -74,14 +74,23 @@ class VerificationRequestSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source='user.name', read_only=True)
     user_email = serializers.EmailField(source='user.email', read_only=True)
     user_phone = serializers.CharField(source='user.phone', read_only=True)
+    certificate_url = serializers.SerializerMethodField()
 
     class Meta:
         model = VerificationRequest
         fields = [
             'id', 'user_name', 'user_email', 'user_phone',
-            'role', 'certificate', 'created_at',
+            'role', 'certificate', 'certificate_url', 'created_at',
             'is_approved', 'is_rejected', 'rejection_reason'
         ]
+
+    def get_certificate_url(self, obj):
+        request = self.context.get('request')
+        if obj.certificate and request:
+            return request.build_absolute_uri(obj.certificate.url)
+        elif obj.certificate:
+            return obj.certificate.url
+        return None
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
