@@ -1,12 +1,34 @@
-from django.http import HttpResponse
+from django.utils.deprecation import MiddlewareMixin
+import os
 
-class HeadRequestMiddleware:
-    def __init__(self, get_response):
-        self.get_response = get_response
+class HeadRequestMiddleware(MiddlewareMixin):
+    """
+    Middleware to handle HTTP HEAD requests properly.
+    """
 
-    def __call__(self, request):
+    def process_request(self, request):
         if request.method == 'HEAD':
-            response = self.get_response(request)
+            request.method = 'GET'
+            request._head_request = True
+
+    def process_response(self, request, response):
+        if getattr(request, '_head_request', False):
             response.content = b''
-            return response
-        return self.get_response(request)
+        return response
+
+class CertificateXFrameOptionsMiddleware(MiddlewareMixin):
+    """
+    Middleware to allow embedding of certificate files (pdf, png, jpeg, jpg) in iframes by
+    modifying the X-Frame-Options header for /media/certificates/ URLs.
+    """
+
+    ALLOWED_EXTENSIONS = {'.pdf', '.png', '.jpeg', '.jpg'}
+
+    def process_response(self, request, response):
+        if request.path.startswith('/media/certificates/'):
+            ext = os.path.splitext(request.path)[1].lower()
+            if ext in self.ALLOWED_EXTENSIONS:
+                # Remove X-Frame-Options header to allow embedding
+                if 'X-Frame-Options' in response:
+                    del response['X-Frame-Options']
+        return response
