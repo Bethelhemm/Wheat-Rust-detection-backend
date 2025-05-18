@@ -56,7 +56,6 @@ INSTALLED_APPS = [
     "notifications",
     "cloudinary",
     "cloudinary_storage",
-    "chatbot",
 ]
 
 REST_FRAMEWORK = {
