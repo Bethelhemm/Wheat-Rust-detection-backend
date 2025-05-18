@@ -22,9 +22,15 @@ class PostSerializer(serializers.ModelSerializer):
         return obj.comments.count()
 
     def get_image_url(self, obj):
-        request = self.context.get('request')
-        if obj.image and request:
-            return request.build_absolute_uri(obj.image.url)
+        # Since Cloudinary URLs are absolute, return directly
+        if obj.image:
+            return obj.image.url
+        return None
+
+    def get_audio_url(self, obj):
+        # Provide full URL for audio file
+        if obj.audio:
+            return obj.audio.url
         return None
 
 class CommentSerializer(serializers.ModelSerializer):
