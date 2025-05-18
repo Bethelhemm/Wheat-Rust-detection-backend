@@ -9,8 +9,28 @@ class Post(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
     post_type = models.CharField(max_length=20, choices=POST_TYPE_CHOICES, default="question")
     text = models.TextField(blank=True, null=True)
-    image = models.ImageField(upload_to="post_images/", blank=True, null=True)
-    audio = models.FileField(upload_to="post_audios/", blank=True, null=True)
+import datetime
+
+class Post(models.Model):
+    POST_TYPE_CHOICES = [
+        ("question", "Question"),
+        ("article", "Article"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
+    post_type = models.CharField(max_length=20, choices=POST_TYPE_CHOICES, default="question")
+    text = models.TextField(blank=True, null=True)
+
+    def user_directory_path(instance, filename):
+        # file will be uploaded to MEDIA_ROOT/user_<id>/<year>/<month>/<filename>
+        return 'user_{0}/{1}/{2}/{3}'.format(instance.user.id, datetime.datetime.now().year, datetime.datetime.now().month, filename)
+
+    image = models.ImageField(upload_to=user_directory_path, blank=True, null=True)
+    audio = models.FileField(upload_to=user_directory_path, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Post by {self.user.name}"
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

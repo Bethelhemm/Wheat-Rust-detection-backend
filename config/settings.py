@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "notifications",
     "cloudinary",
     "cloudinary_storage",
+    "chatbot",
 ]
 
 REST_FRAMEWORK = {
@@ -125,6 +126,8 @@ DATABASES = {
         'OPTIONS': {'sslmode': 'require'},
     }
 }
+
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
 # Cloudinary settings for media upload
 CLOUDINARY_STORAGE = {

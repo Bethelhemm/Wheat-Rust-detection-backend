@@ -220,6 +220,11 @@ class ApproveVerificationView(APIView):
             receiver=req.user,
             notification_type="verification",
         )
+        # Send push notification
+        if req.user.device_token:
+            title = "Verification Approved"
+            body = "Your verification request has been approved."
+            send_push_notification(req.user.device_token, title, body)
 
         return Response({'detail': 'User verified successfully.'})
 
@@ -250,6 +255,11 @@ class RejectVerificationView(APIView):
             receiver=req.user,
             notification_type="verification",
         )
+        # Send push notification
+        if req.user.device_token:
+            title = "Verification Rejected"
+            body = "Your verification request has been rejected."
+            send_push_notification(req.user.device_token, title, body)
 
         return Response({"detail": "Verification request rejected."}, status=status.HTTP_200_OK)
     
