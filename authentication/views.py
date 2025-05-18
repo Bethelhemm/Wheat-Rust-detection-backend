@@ -37,7 +37,12 @@ class RegisterView(GenericAPIView):
         
         if serializer.is_valid():
             user = serializer.save()
-            return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
+            tokens = RefreshToken.for_user(user)
+            return Response({
+                "user": UserSerializer(user).data,
+                "access_token": str(tokens.access_token),
+                "refresh_token": str(tokens)
+            }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(GenericAPIView):
@@ -181,9 +186,9 @@ class SubmitVerificationRequestView(CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        # Prevent submission if user has a pending (not approved or rejected) request
-        existing_request = VerificationRequest.objects.filter(user=self.request.user, is_approved=False, is_rejected=False).first()
-        if existing_request:
+        # Allow submission only if no pending request or last request was rejected
+        existing_request = VerificationRequest.objects.filter(user=self.request.user, is_approved=False).order_by('-created_at').first()
+        if existing_request and not existing_request.is_rejected:
             raise serializers.ValidationError("You already have a pending verification request.")
         serializer.save(user=self.request.user)
 
