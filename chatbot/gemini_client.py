@@ -3,7 +3,7 @@ from django.conf import settings
 
 genai.configure(api_key=settings.GEMINI_API_KEY)
 
-model = genai.GenerativeModel(model_name="models/gemini-1.5-pro")
+model = genai.GenerativeModel()
 
 def get_gemini_response(prompt):
     try:
