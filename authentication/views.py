@@ -96,6 +96,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+from django.db.models import Avg
+from .models import Feedback
 
 class FileUploadView(APIView):
     permission_classes = [IsAuthenticated]
@@ -113,6 +115,15 @@ class FileUploadView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response({"file_url": file_url}, status=status.HTTP_201_CREATED)
+
+class AverageRatingView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        average_rating = Feedback.objects.aggregate(avg_rating=Avg('rating'))['avg_rating']
+        if average_rating is None:
+            average_rating = 0
+        return Response({"average_rating": round(average_rating, 2)}, status=status.HTTP_200_OK)
 
 class UserVerificationStatusView(APIView):
     permission_classes = [IsAuthenticated]
