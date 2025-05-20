@@ -97,3 +97,22 @@ class VerificationRequest(models.Model):
     is_approved = models.BooleanField(default=False)
     is_rejected = models.BooleanField(default=False)
     rejection_reason = models.TextField(null=True, blank=True)
+
+class Feedback(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    RATING_CHOICES = [
+        (1, '1 - Very Poor'),
+        (2, '2 - Poor'), 
+        (3, '3 - Average'),
+        (4, '4 - Good'),
+        (5, '5 - Excellent')
+    ]
+    rating = models.IntegerField(choices=RATING_CHOICES)
+    comments = models.TextField(blank=True, null=True)
+    ai_detection_accuracy = models.BooleanField(
+        help_text="Did the AI correctly identify the disease?"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Feedback from {self.user.name} - {self.get_rating_display()}"

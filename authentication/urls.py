@@ -24,5 +24,7 @@ urlpatterns = [
     path("password-reset/verify/", PasswordResetVerifyView.as_view(), name="password-reset-verify"),
     path("verification/status/", UserVerificationStatusView.as_view(), name="user-verification-status"),
     path("upload-file/", FileUploadView.as_view(), name="file-upload"),
+    path("feedback/submit/", SubmitFeedbackView.as_view(), name="submit-feedback"),
+    path("feedback/list/", AdminFeedbackListView.as_view(), name="admin-feedback-list"),
 
 ]

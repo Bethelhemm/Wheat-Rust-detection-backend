@@ -116,3 +116,9 @@ class PasswordResetVerifySerializer(serializers.Serializer):
             raise serializers.ValidationError("Passwords must match.")
         return data
     
+class FeedbackSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.name', read_only=True)
+    
+    class Meta:
+        model = Feedback
+        fields = ['id', 'user_name', 'rating', 'comments', 'ai_detection_accuracy', 'created_at']

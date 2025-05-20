@@ -343,3 +343,20 @@ class PasswordResetVerifyView(GenericAPIView):
             return Response({"message": "Invalid OTP or OTP expired."}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class SubmitFeedbackView(CreateAPIView):
+    queryset = Feedback.objects.all()
+    serializer_class = FeedbackSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+        
+class AdminFeedbackListView(ListAPIView):
+    queryset = Feedback.objects.select_related('user').all()
+    serializer_class = FeedbackSerializer
+    permission_classes = [IsAdminUser]
+    pagination_class = PageNumberPagination
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ['user__name', 'user__email', 'comments']
+    filterset_fields = ['rating', 'ai_detection_accuracy']
