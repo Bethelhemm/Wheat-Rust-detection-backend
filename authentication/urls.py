@@ -26,5 +26,6 @@ urlpatterns = [
     path("upload-file/", FileUploadView.as_view(), name="file-upload"),
     path("feedback/submit/", SubmitFeedbackView.as_view(), name="submit-feedback"),
     path("feedback/list/", AdminFeedbackListView.as_view(), name="admin-feedback-list"),
+    path("feedback/average-rating/", AverageRatingView.as_view(), name="feedback-average-rating"),
 
 ]

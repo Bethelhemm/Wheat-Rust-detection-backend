@@ -56,6 +56,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_verified_expert = models.BooleanField(default=False)
     otp = models.CharField(max_length=6, null=True, blank=True)
     otp_expiry = models.DateTimeField(null=True, blank=True)
+    device_token = models.CharField(max_length=255, null=True, blank=True)
 
     def get_username(self):
         # Return email if present, else phone
