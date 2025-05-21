@@ -27,6 +27,7 @@ urlpatterns = [
     path("authentication/", include("authentication.urls")),
     path("community/", include("community.urls")),
     path("notifications/", include("notifications.urls")),
+    path("chatbot/", include("chatbot.urls")),
 ]
 
 if settings.DEBUG:
