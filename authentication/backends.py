@@ -1,25 +1,19 @@
-import logging
 from django.contrib.auth.backends import ModelBackend
-from authentication.models import User
+from django.contrib.auth import get_user_model
+from django.core.exceptions import PermissionDenied
 
-logger = logging.getLogger(__name__)
+User = get_user_model()
 
-class EmailOrPhoneBackend(ModelBackend):
+class BannedUserBackend(ModelBackend):
     def authenticate(self, request, username=None, password=None, **kwargs):
-        logger.info(f"Authenticating user with username: {username}")
-        if username is None:
-            return None 
         try:
-            if '@' in username:
-                user = User.objects.get(email=username)
-            else:
-                user = User.objects.get(phone=username)
+            user = User.objects.get(username=username)
         except User.DoesNotExist:
-            logger.warning(f"User not found for username: {username}")
             return None
 
+        if user.is_banned:
+            raise PermissionDenied("Your account has been banned and you cannot log in.")
+
         if user.check_password(password) and self.user_can_authenticate(user):
-            logger.info(f"User authenticated successfully: {username}")
             return user
-        logger.warning(f"Authentication failed for user: {username}")
         return None

@@ -7,6 +7,7 @@ class Notification(models.Model):
         ("like", "Like"),
         ("comment", "Comment"),
         ("verification", "Verification"),
+        ("warning", "Warning"),
     )
 
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_notifications")
@@ -17,7 +18,11 @@ class Notification(models.Model):
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    message = models.TextField(null=True, blank=True)
+
     def __str__(self):
+        if self.message:
+            return self.message
         if self.notification_type == "verification":
             return f"{self.sender.name} has {self.notification_type} your account"
         return f"{self.sender.name} {self.notification_type}d your post"

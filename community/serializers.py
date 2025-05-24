@@ -33,6 +33,31 @@ class PostSerializer(serializers.ModelSerializer):
             return obj.audio.url
         return None
 
+
+class CommunityGuidelineSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CommunityGuideline
+        fields = ['code', 'title', 'description']
+
+
+class PostReportSerializer(serializers.ModelSerializer):
+    post = serializers.PrimaryKeyRelatedField(queryset=Post.objects.all())
+    reported_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    reason = serializers.ChoiceField(choices=PostReport.REASON_CHOICES, required=False, allow_blank=True)
+    reason_detail = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PostReport
+        fields = ["id", "post", "reported_by", "reason", "reason_detail", "created_at", "status"]
+        read_only_fields = ["created_at", "status"]
+
+    def get_reason_detail(self, obj):
+        try:
+            guideline = CommunityGuideline.objects.get(code=obj.reason)
+            return CommunityGuidelineSerializer(guideline).data
+        except CommunityGuideline.DoesNotExist:
+            return None
+        
 class CommentSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source="user.name", read_only=True)
     user = serializers.PrimaryKeyRelatedField(read_only=True)  

@@ -82,6 +82,9 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.name
+
+    warnings_count = models.IntegerField(default=0)
+    is_banned = models.BooleanField(default=False)
     
 class VerificationRequest(models.Model):
     ROLE_CHOICES = [

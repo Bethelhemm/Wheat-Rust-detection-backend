@@ -1,10 +1,10 @@
 from rest_framework import generics, status, parsers
-from rest_framework.permissions import IsAuthenticated, BasePermission, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated, BasePermission, IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework.response import Response
 from django.db.models import Q
 from rest_framework.exceptions import PermissionDenied
-from .models import Post, Comment, Like, SavedPost
-from .serializers import PostSerializer, CommentSerializer, LikeSerializer, SavedPostSerializer
+from .models import *
+from .serializers import PostSerializer, CommentSerializer, LikeSerializer, SavedPostSerializer, PostReportSerializer, CommunityGuidelineSerializer
 from notifications.models import Notification
 
 class IsOwnerOrReadOnly(BasePermission):
@@ -119,3 +119,114 @@ class PostSearchView(generics.ListAPIView):
     def get_queryset(self):
         query = self.request.query_params.get('q', '')
         return Post.objects.filter(Q(text__icontains=query)).order_by('-created_at')
+
+# New views for post reporting and admin management
+
+class ReportPostView(generics.CreateAPIView):
+    serializer_class = PostReportSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(reported_by=self.request.user)
+
+class AdminReportedPostsView(generics.ListAPIView):
+    serializer_class = PostReportSerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        return PostReport.objects.filter(status="pending").order_by("-created_at")
+
+class AdminBanPostView(generics.UpdateAPIView):
+    serializer_class = PostReportSerializer
+    permission_classes = [IsAdminUser]
+    queryset = PostReport.objects.all()
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        post_owner = instance.post.user
+
+        # Avoid banning if already banned
+        if instance.status == "banned":
+            return Response({"detail": "Post is already banned."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Increase severity score based on unique reporters
+        unique_reporters_count = PostReport.objects.filter(post=instance.post).values('reported_by').distinct().count()
+        instance.severity_score = unique_reporters_count
+        instance.save()
+
+        # Increment warnings count
+        post_owner.warnings_count += 1
+
+        # Send warning notification to post owner before banning
+        Notification.objects.create(
+            sender=request.user,
+            receiver=post_owner,
+            notification_type="warning",
+            post=instance.post,
+            message="Your post has been banned because it violates our community guidelines based on received reports."
+        )
+
+        # Delete the post after banning
+        instance.post.delete()
+
+        # Temporarily ban user if warnings reach 3
+        if post_owner.warnings_count >= 3:
+            post_owner.is_banned = True
+            post_owner.warnings_count = 0  # reset warnings after ban
+            # Send push notification for ban
+            if post_owner.device_token:
+                from notifications.utils import send_push_notification
+                send_push_notification(
+                    token=post_owner.device_token,
+                    title="Account Banned",
+                    body="Your account has been temporarily banned due to multiple violations."
+                )
+        post_owner.save()
+
+        # Update status to banned
+        instance.status = "banned"
+        instance.save()
+
+        return Response({"detail": "Post owner has been warned, severity updated, and banned if warnings reached 3."}, status=status.HTTP_200_OK)
+
+class AdminDeleteUserView(generics.DestroyAPIView):
+    permission_classes = [IsAdminUser]
+    queryset = PostReport.objects.all()
+
+    def delete(self, request, *args, **kwargs):
+        report = self.get_object()
+        user_to_delete = report.post.user
+        user_to_delete.delete()
+        return Response({"detail": "User account deleted."}, status=status.HTTP_204_NO_CONTENT)
+
+class AdminPostsView(generics.ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        return Post.objects.all().order_by("-created_at")
+
+class AdminReinstatePostView(generics.UpdateAPIView):
+    serializer_class = PostReportSerializer
+    permission_classes = [IsAdminUser]
+    queryset = PostReport.objects.all()
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        post_owner = instance.post.user
+        # Send warning notification to post owner about reinstatement
+        Notification.objects.create(
+            sender=request.user,
+            receiver=post_owner,
+            notification_type="warning",
+            post=instance.post,
+            message="Your post has been banned because it violates our community guidelines based on received reports."
+        )
+        # Update status to active
+        instance.status = "active"
+        instance.save()
+        return Response({"detail": "Post has been reinstated and user notified."}, status=status.HTTP_200_OK)
+
+class CommunityGuidelineListView(generics.ListAPIView):
+    serializer_class = CommunityGuidelineSerializer
+    queryset = CommunityGuideline.objects.all()
