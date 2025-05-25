@@ -27,5 +27,6 @@ urlpatterns = [
     path("feedback/submit/", SubmitFeedbackView.as_view(), name="submit-feedback"),
     path("feedback/list/", AdminFeedbackListView.as_view(), name="admin-feedback-list"),
     path("feedback/average-rating/", AverageRatingView.as_view(), name="feedback-average-rating"),
+    path('admin/users/<int:user_id>/delete/', AdminDeleteUserView.as_view(), name='admin-delete-user'),
 
 ]

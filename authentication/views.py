@@ -371,3 +371,16 @@ class AdminFeedbackListView(ListAPIView):
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
     search_fields = ['user__name', 'user__email', 'comments']
     filterset_fields = ['rating', 'ai_detection_accuracy']
+
+class AdminDeleteUserView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def delete(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+            if user.role == "admin":
+                return Response({"error": "Cannot delete an admin user."}, status=status.HTTP_403_FORBIDDEN)
+            user.delete()
+            return Response({"detail": "User deleted successfully."}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
