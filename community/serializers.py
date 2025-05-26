@@ -6,7 +6,7 @@ class PostSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source="user.name", read_only=True)
     likes_count = serializers.SerializerMethodField()
     comments_count = serializers.SerializerMethodField()
-    image_url = serializers.URLField(required=False, allow_blank=True)
+    image_url = serializers.CharField(source='image', required=False, allow_null=True)
     audio_url = serializers.URLField(required=False, allow_blank=True)
     file_url = serializers.URLField(required=False, allow_blank=True)
     post_type = serializers.ChoiceField(choices=Post.POST_TYPE_CHOICES, default="question")
@@ -18,12 +18,6 @@ class PostSerializer(serializers.ModelSerializer):
             "image_url", "audio_url", "file_url",
             "created_at", "likes_count", "comments_count", "post_type"
         ]
-
-    def create(self, validated_data):
-        image_url = validated_data.pop('image_url', None)
-        if image_url is not None:
-            validated_data['image'] = image_url
-        return super().create(validated_data)
 
     def update(self, instance, validated_data):
         image_url = validated_data.pop('image_url', None)

@@ -35,7 +35,7 @@ class PostCreateView(generics.CreateAPIView):
             if not (user.is_verified_researcher or user.is_verified_expert):
                 raise PermissionDenied("Only verified agricultural experts or researchers can post articles.")
         serializer.save(user=user)
-
+    
 class PostListView(generics.ListAPIView):
     queryset = Post.objects.all().order_by("-created_at")
     serializer_class = PostSerializer
