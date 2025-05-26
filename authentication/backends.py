@@ -17,7 +17,7 @@ class EmailOrPhoneBackend(ModelBackend):
         except User.DoesNotExist:
             try:
                 # Try to fetch the user by phone number
-                user = User.objects.get(phone_number=username)
+                user = User.objects.get(phone=username)
             except User.DoesNotExist:
                 return None
 
