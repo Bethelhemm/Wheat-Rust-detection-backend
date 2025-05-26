@@ -119,7 +119,7 @@ class UserSavedPostsView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Post.objects.filter(saved_by__user=self.request.user).distinct().order_by('-created_at')
+        return Post.objects.filter(saved_posts__user=self.request.user).distinct().order_by('-created_at')
 
 class PostSearchView(generics.ListAPIView):
     serializer_class = PostSerializer
