@@ -14,9 +14,9 @@ class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = [
-            "id", "user", "user_name", "text",
+            "id", "title", "user", "user_name", "text",
             "image_url", "audio_url", "file_url",
-            "created_at", "likes_count", "comments_count", "post_type"
+            "created_at", "likes_count", "comments_count", "post_type", "is_banned", "severity_score"
         ]
 
     def update(self, instance, validated_data):
@@ -46,8 +46,7 @@ class PostReportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PostReport
-        fields = ["id", "post", "reported_by", "reason", "reason_detail", "created_at", "status"]
-        read_only_fields = ["created_at", "status"]
+        fields = ['id', 'post', 'reported_by', 'reason', 'created_at', 'status', 'is_banned']
 
     def get_reason_detail(self, obj):
         try:

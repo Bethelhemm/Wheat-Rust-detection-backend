@@ -21,6 +21,7 @@ class Post(models.Model):
     audio_url = models.URLField(blank=True, null=True)
     file_url = models.URLField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    severity_score = models.IntegerField(default=0)
 
     def __str__(self):
         return f"Post by {self.user.name}"
@@ -38,8 +39,9 @@ class PostReport(models.Model):
     reported_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="post_reports")
     reason = models.CharField(max_length=20, choices=REASON_CHOICES, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=20, default="pending")  # pending, reviewed, banned
-    severity_score = models.IntegerField(default=0)
+    status = models.CharField(max_length=20, default="pending")  # pending, reviewed, banned    
+    is_banned = models.BooleanField(default=False)
+    
 
     def __str__(self):
         return f"Report on Post {self.post.id} by {self.reported_by.name}"
