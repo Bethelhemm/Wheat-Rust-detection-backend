@@ -18,6 +18,19 @@ class PostSerializer(serializers.ModelSerializer):
             "image_url", "audio_url", "file_url",
             "created_at", "likes_count", "comments_count", "post_type"
         ]
+
+    def create(self, validated_data):
+        image_url = validated_data.pop('image_url', None)
+        if image_url is not None:
+            validated_data['image'] = image_url
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        image_url = validated_data.pop('image_url', None)
+        if image_url is not None:
+            validated_data['image'] = image_url
+        return super().update(instance, validated_data)
+
     def get_likes_count(self, obj):
         return obj.likes.count()
 
