@@ -6,7 +6,7 @@ class PostSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source="user.name", read_only=True)
     likes_count = serializers.SerializerMethodField()
     comments_count = serializers.SerializerMethodField()
-    image_url = serializers.CharField(source='image', required=False, allow_null=True)
+    image_url = serializers.CharField(required=False, allow_null=True)
     audio_url = serializers.URLField(required=False, allow_blank=True)
     file_url = serializers.URLField(required=False, allow_blank=True)
     post_type = serializers.ChoiceField(choices=Post.POST_TYPE_CHOICES, default="question")

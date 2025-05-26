@@ -35,7 +35,7 @@ class PostCreateView(generics.CreateAPIView):
             if not (user.is_verified_researcher or user.is_verified_expert):
                 raise PermissionDenied("Only verified agricultural experts or researchers can post articles.")
         serializer.save(user=user)
-    
+
 class PostListView(generics.ListAPIView):
     queryset = Post.objects.all().order_by("-created_at")
     serializer_class = PostSerializer
@@ -114,13 +114,12 @@ class SavePostView(generics.CreateAPIView):
             return Response({"message": "Post unsaved", "saved": False}, status=status.HTTP_200_OK)
 
         return Response({"message": "Post saved", "saved": True}, status=status.HTTP_201_CREATED)
-
 class UserSavedPostsView(generics.ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Post.objects.filter(savedpost__user=self.request.user).distinct().order_by('-created_at')
+        return Post.objects.filter(saved_by__user=self.request.user).distinct().order_by('-created_at')
 
 class PostSearchView(generics.ListAPIView):
     serializer_class = PostSerializer

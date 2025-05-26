@@ -70,7 +70,11 @@ class Like(models.Model):
 
 class SavedPost(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="saved_posts")
+    post = models.ForeignKey(
+        Post,
+        on_delete=models.CASCADE,
+        related_name="saved_posts"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
