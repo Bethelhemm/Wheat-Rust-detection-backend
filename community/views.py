@@ -1,13 +1,25 @@
 from rest_framework import generics, status, parsers
 from rest_framework.permissions import IsAuthenticated, BasePermission, IsAuthenticatedOrReadOnly, IsAdminUser
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.views import exception_handler
 from rest_framework.response import Response
 from django.db.models import Q
-from rest_framework.exceptions import PermissionDenied
 from .models import *
 from .serializers import PostSerializer, CommentSerializer, LikeSerializer, SavedPostSerializer, PostReportSerializer, CommunityGuidelineSerializer
 from notifications.models import Notification
 from django.shortcuts import get_object_or_404
 
+class CustomIsAdminUser(IsAdminUser):
+    """
+    Custom permission class that returns 403 Forbidden JSON response instead of redirect for unauthorized users.
+    """
+    def has_permission(self, request, view):
+        is_admin = super().has_permission(request, view)
+        if not is_admin:
+            # Instead of redirect, raise PermissionDenied to return 403 JSON response
+            raise PermissionDenied(detail="You do not have permission to perform this action.")
+        return True
+    
 class IsOwnerOrReadOnly(BasePermission):
     """
     Custom permission to only allow owners of a post to edit or delete it.
@@ -140,7 +152,7 @@ class ReportPostView(generics.CreateAPIView):
 
 class AdminReportedPostsView(generics.ListAPIView):
     serializer_class = PostReportSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [CustomIsAdminUser]
 
     def get_queryset(self):
         return PostReport.objects.filter(status="pending").order_by("-created_at")
