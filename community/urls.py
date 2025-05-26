@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.urls import path
 from .views import (
     PostCreateView,
@@ -16,6 +18,7 @@ from .views import (
     AdminPostsView,
     AdminReinstatePostView,
     CommunityGuidelineListView,
+    UserSavedPostsView,
 )
 
 urlpatterns = [
@@ -24,6 +27,7 @@ urlpatterns = [
     path("posts/<int:post_id>/comment/", CommentCreateView.as_view(), name="comment-create"),
     path("posts/<int:post_id>/like/", LikePostView.as_view(), name="like-post"),
     path("posts/<int:post_id>/save/", SavePostView.as_view(), name="save-post"),
+    path("posts/saved/", UserSavedPostsView.as_view(), name="user-saved-posts"),
     path("posts/search/", PostSearchView.as_view(), name="post-search"),
     path("posts/<int:post_id>/comments/", CommentListView.as_view(), name="comment-list"),
 
@@ -38,3 +42,5 @@ urlpatterns = [
     path("admin/reinstate-post/<int:pk>/", AdminReinstatePostView.as_view(), name="admin-reinstate-post"),
     path("settings/community-guidelines/", CommunityGuidelineListView.as_view(), name="community-guidelines"),
 ]
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

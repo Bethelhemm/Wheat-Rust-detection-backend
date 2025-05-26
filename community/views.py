@@ -6,6 +6,7 @@ from rest_framework.exceptions import PermissionDenied
 from .models import *
 from .serializers import PostSerializer, CommentSerializer, LikeSerializer, SavedPostSerializer, PostReportSerializer, CommunityGuidelineSerializer
 from notifications.models import Notification
+from django.shortcuts import get_object_or_404
 
 class IsOwnerOrReadOnly(BasePermission):
     """
@@ -103,14 +104,23 @@ class SavePostView(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         post_id = self.kwargs.get("post_id")
-        post = Post.objects.get(id=post_id)
+        post = get_object_or_404(Post, id=post_id)
+
+        # Try to get or create the saved post
         saved_post, created = SavedPost.objects.get_or_create(user=request.user, post=post)
 
         if not created:
             saved_post.delete()
-            return Response({"message": "Post removed from saved"}, status=status.HTTP_204_NO_CONTENT)
+            return Response({"message": "Post unsaved", "saved": False}, status=status.HTTP_200_OK)
 
-        return Response({"message": "Post saved"}, status=status.HTTP_201_CREATED)
+        return Response({"message": "Post saved", "saved": True}, status=status.HTTP_201_CREATED)
+
+class UserSavedPostsView(generics.ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Post.objects.filter(savedpost__user=self.request.user).distinct().order_by('-created_at')
 
 class PostSearchView(generics.ListAPIView):
     serializer_class = PostSerializer

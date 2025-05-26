@@ -17,9 +17,9 @@ class Post(models.Model):
         # file will be uploaded to MEDIA_ROOT/user_<id>/<year>/<month>/<filename>
         return 'user_{0}/{1}/{2}/{3}'.format(instance.user.id, datetime.datetime.now().year, datetime.datetime.now().month, filename)
 
-    image = models.ImageField(blank=True, null=True)
-    audio = models.FileField(upload_to=user_directory_path, blank=True, null=True)
-    file = models.FileField(upload_to=user_directory_path, blank=True, null=True)
+    image = models.URLField(blank=True, null=True)
+    audio_url = models.URLField(blank=True, null=True)
+    file_url = models.URLField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
