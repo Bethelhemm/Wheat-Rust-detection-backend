@@ -1,5 +1,7 @@
 from rest_framework import generics, status, parsers
 from rest_framework.permissions import IsAuthenticated, BasePermission, IsAuthenticatedOrReadOnly, IsAdminUser
+
+# Replace IsAdminUser with CustomIsAdminUser in admin views to avoid redirect on permission failure
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import exception_handler, APIView
 from rest_framework.response import Response
@@ -152,14 +154,14 @@ class ReportPostView(generics.CreateAPIView):
 
 class AdminReportedPostsView(generics.ListAPIView):
     serializer_class = PostReportSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [CustomIsAdminUser]
 
     def get_queryset(self):
         return PostReport.objects.filter(status="pending").order_by("-created_at")
 
 class AdminBanPostView(generics.UpdateAPIView):
     serializer_class = PostReportSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [CustomIsAdminUser]
     queryset = PostReport.objects.all()
 
     def perform_update(self, serializer):
