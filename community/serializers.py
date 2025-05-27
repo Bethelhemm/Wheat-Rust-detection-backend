@@ -16,7 +16,7 @@ class PostSerializer(serializers.ModelSerializer):
         fields = [
             "id", "title", "user", "user_name", "text",
             "image_url", "audio_url", "file_url",
-            "created_at", "likes_count", "comments_count", "post_type", "is_banned", "severity_score"
+            "created_at", "likes_count", "comments_count", "post_type", "severity_score"
         ]
 
     def update(self, instance, validated_data):
