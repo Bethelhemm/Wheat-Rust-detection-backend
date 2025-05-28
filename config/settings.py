@@ -54,8 +54,7 @@ INSTALLED_APPS = [
     "authentication",
     "community",
     "notifications",
-    "cloudinary",
-    "cloudinary_storage",
+    "drf_yasg",
 ]
 
 REST_FRAMEWORK = {

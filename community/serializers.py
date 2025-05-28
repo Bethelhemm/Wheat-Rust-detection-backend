@@ -46,7 +46,7 @@ class PostReportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PostReport
-        fields = ['id', 'post', 'reported_by', 'reason', 'created_at', 'status', 'is_banned']
+        fields = ['id', 'post', 'reported_by', 'reason', 'created_at', 'status', 'is_banned', 'reason_detail']
 
     def get_reason_detail(self, obj):
         try:

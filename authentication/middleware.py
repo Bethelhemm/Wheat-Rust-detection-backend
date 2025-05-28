@@ -4,24 +4,6 @@ from django.contrib.auth import logout
 from django.shortcuts import redirect
 from django.urls import reverse
 
-class BannedUserLogoutMiddleware:
-    """
-    Middleware to automatically log out banned users on each request.
-    """
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        user = request.user
-        login_url = reverse("login")
-        if user.is_authenticated and getattr(user, "is_banned", False):
-            # Avoid redirect loop by not redirecting if already on login page
-            if request.path != login_url:
-                logout(request)
-                return redirect(login_url)
-        response = self.get_response(request)
-        return response
-
 
 class HeadRequestMiddleware(MiddlewareMixin):
     """

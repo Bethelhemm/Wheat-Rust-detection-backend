@@ -152,73 +152,6 @@ class ReportPostView(generics.CreateAPIView):
     def perform_create(self, serializer):
         serializer.save(reported_by=self.request.user)
 
-class AdminReportedPostsView(generics.ListAPIView):
-    serializer_class = PostReportSerializer
-    permission_classes = [CustomIsAdminUser]
-
-    def get_queryset(self):
-        return PostReport.objects.filter(status="pending").order_by("-created_at")
-
-class AdminBanPostView(generics.UpdateAPIView):
-    serializer_class = PostReportSerializer
-    permission_classes = [CustomIsAdminUser]
-    queryset = PostReport.objects.all()
-
-    def perform_update(self, serializer):
-        instance = serializer.instance
-        post = instance.post
-
-        # Soft ban post
-        post.is_banned = True
-        post.save()
-
-        # Update all reports for this post
-        unique_reporters_count = PostReport.objects.filter(post=post).values('reported_by').distinct().count()
-        PostReport.objects.filter(post=post).update(
-            is_banned=True,
-            severity_score=unique_reporters_count,
-            status="banned"
-        )
-
-        post_owner = post.user
-        post_owner.warnings_count += 1
-
-        # Send warning notification
-        Notification.objects.create(
-            sender=self.request.user,
-            receiver=post_owner,
-            notification_type="warning",
-            post=post,
-            message="Your post has been banned due to multiple violations."
-        )
-
-        # Temporary ban if warnings >= 3
-        if post_owner.warnings_count >= 3:
-            post_owner.is_banned = True
-            post_owner.warnings_count = 0
-            if post_owner.device_token:
-                from notifications.utils import send_push_notification
-                send_push_notification(
-                    token=post_owner.device_token,
-                    title="Account Banned",
-                    body="Your account has been temporarily banned due to repeated violations."
-                )
-
-        post_owner.save()
-
-class AdminDeleteUserView(APIView):
-    permission_classes = [IsAdminUser]
-
-    def delete(self, request, user_id):
-        try:
-            user = User.objects.get(id=user_id)
-            if user.is_superuser or user.role == "admin":
-                return Response({"error": "Cannot delete admin/superuser."}, status=status.HTTP_403_FORBIDDEN)
-            user.delete()
-            return Response({"detail": "User deleted successfully."}, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-
 class AdminPostsView(generics.ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [IsAdminUser]
@@ -226,27 +159,6 @@ class AdminPostsView(generics.ListAPIView):
     def get_queryset(self):
         return Post.objects.all().order_by("-created_at")
 
-class AdminReinstatePostView(generics.UpdateAPIView):
-    serializer_class = PostReportSerializer
-    permission_classes = [IsAdminUser]
-    queryset = PostReport.objects.all()
-
-    def perform_update(self, serializer):
-        instance = serializer.instance
-        post = instance.post
-
-        post.is_banned = False
-        post.save()
-
-        PostReport.objects.filter(post=post).update(is_banned=False, status="active")
-
-        Notification.objects.create(
-            sender=self.request.user,
-            receiver=post.user,
-            notification_type="info",
-            post=post,
-            message="Your post has been reinstated after review."
-        )
 
 class CommunityGuidelineListView(generics.ListAPIView):
     serializer_class = CommunityGuidelineSerializer

@@ -279,47 +279,6 @@ class RejectVerificationView(APIView):
 
         return Response({"detail": "Verification request rejected."}, status=status.HTTP_200_OK)
     
-class PasswordResetRequestView(GenericAPIView):
-    serializer_class = PasswordResetRequestSerializer
-
-    def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            email = serializer.validated_data.get('email')
-            phone = serializer.validated_data.get('phone')
-            user = None
-            
-            if email:
-                user = User.objects.filter(email=email).first()
-            elif phone:
-                user = User.objects.filter(phone=phone).first()
-
-            if user:
-                user.generate_otp()
-                
-                # Sending OTP via email
-                send_mail(
-                    'Your OTP Code',
-                    f'Your OTP code is {user.otp}',
-                    settings.DEFAULT_FROM_EMAIL,
-                    [user.email],
-                    fail_silently=False,
-                )
-
-                # Sending OTP via SMS (using a service like Twilio)
-                client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-                client.messages.create(
-                    body=f'Your OTP code is {user.otp}',
-                    from_=settings.TWILIO_PHONE_NUMBER,
-                    to=user.phone
-                )
-                
-                return Response({"message": "OTP sent!"}, status=status.HTTP_200_OK)
-
-            return Response({"message": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -334,27 +293,6 @@ class LogoutView(APIView):
         except (TokenError, InvalidToken) as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-class PasswordResetVerifyView(GenericAPIView):
-    serializer_class = PasswordResetVerifySerializer
-
-    def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            otp = serializer.validated_data["otp"]
-            new_password = serializer.validated_data["new_password"]
-            user = User.objects.filter(otp=otp, otp_expiry__gt=timezone.now()).first()
-
-            if user:
-                user.set_password(new_password)
-                user.otp = None  # Clear OTP
-                user.otp_expiry = None  # Clear expiry
-                user.save()
-                return Response({"message": "Password reset successful!"}, status=status.HTTP_200_OK)
-
-            return Response({"message": "Invalid OTP or OTP expired."}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
 class SubmitFeedbackView(CreateAPIView):
     queryset = Feedback.objects.all()
     serializer_class = FeedbackSerializer

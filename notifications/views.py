@@ -15,6 +15,9 @@ class MarkNotificationAsReadView(generics.UpdateAPIView):
     serializer_class = NotificationSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        return Notification.objects.filter(receiver=self.request.user)
+
     def patch(self, request, *args, **kwargs):
         notification = Notification.objects.get(id=kwargs["pk"], receiver=request.user)
         notification.is_read = True
